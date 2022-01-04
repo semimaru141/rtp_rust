@@ -1,0 +1,72 @@
+%start Expr
+%%
+Expr -> Result<[Block], ()>:
+    Blocks 'EOF' { Ok($1?) }
+  ;
+Value -> Result<Value, ()>:
+    Value '+' Value { Ok(create_op($1?, $2?, Operator::Plus)) }
+  | Value '-' Value { Ok(create_op($1?, $2?, Operator::Plus)) }
+  | Value '*' Value { Ok(create_op($1?, $2?, Operator::Plus)) }
+  | 'INT'
+    {
+      let v = $1.map_err(|_| ())?;
+      parse_int($lexer.span_str(v.span()))
+    }
+  ;
+Block -> Result<Block, ()>:
+    'STRING' '=' Value { Ok(create_substitute($1?, $3?)) }
+  ;
+Blocks -> Result<[Block], ()>:
+    Block { Ok(create_blocks($1?)) }
+  ;
+%%
+// Any functions here are in scope for all the grammar actions above.
+// Term -> Result<u64, ()>:
+//     Term 'MUL' Factor { Ok($1? * $3?) }
+//   | Factor { $1 }
+//   ;
+// Factor -> Result<u64, ()>:
+//     'LBRACK' Expr 'RBRACK' { $2 }
+//   | 'INT'
+//     {
+//       let v = $1.map_err(|_| ())?;
+//       parse_int($lexer.span_str(v.span()))
+//     }
+//   ;
+use 
+
+
+enum Operator {
+  Plus
+}
+
+enum Block {
+  Substitute(String, Value)
+}
+
+enum Value {
+  Int(u64),
+  Calc(Value, Value, Operator)
+}
+
+fn parse_int(s: &str) -> Result<Value, ()> {
+  match s.parse::<u64>() {
+    Ok(val) => Ok(Value::Int(val)),
+    Err(_) => {
+      eprintln!("{} cannot be represented as a u64", s);
+      Err(())
+    }
+  }
+}
+
+fn create_substitute(s: &str, val: Result<Value, ()>) -> Result<Block, ()> {
+  Ok(Block::Substitute(s.to_string(), val.unwrap()))
+}
+
+fn create_op(lval: Result<Value, ()>, rval: Result<Value, ()>, op: Operator) -> Result<Value, ()> {
+  Ok(lval.unwrap(), rval.unwrap(), op)
+}
+
+fn create_blocks(block: Block) -> Result<Block, ()> {
+  Ok([Block])
+}
